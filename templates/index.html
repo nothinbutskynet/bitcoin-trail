@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Bitcoin Trail</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}">
+</head>
+<body>
+    <div id="game-container">
+        <div id="title-screen" class="screen active">
+            <h1>The Bitcoin Trail</h1>
+            <div class="wallet-selection">
+                <h2>Choose your hardware wallet:</h2>
+                <button class="wallet-btn" data-wallet="bitkey">Bitkey</button>
+                <button class="wallet-btn" data-wallet="trezor">Trezor</button>
+                <button class="wallet-btn" data-wallet="ledger">Ledger</button>
+                <button class="wallet-btn" data-wallet="foundation">Foundation</button>
+            </div>
+        </div>
+
+        <div id="game-screen" class="screen">
+            <div id="stats-bar">
+                <div>Wallet: <span id="current-wallet"></span></div>
+                <div>Bitcoin: <span id="btc-amount">1.0 BTC</span></div>
+                <div>Days: <span id="days">1</span></div>
+            </div>
+            
+            <div id="game-content">
+                <div id="event-text"></div>
+                <div id="choices"></div>
+            </div>
+        </div>
+    </div>
+    <script src="{{ url_for('static', path='/js/game.js') }}"></script>
+</body>
+</html>

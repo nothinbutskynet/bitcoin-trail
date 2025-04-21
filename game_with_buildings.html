@@ -158,8 +158,6 @@
                             <rect id="leg1" width="6" height="20" x="4" y="40" fill="#4169E1"/>
                             <rect id="leg2" width="6" height="20" x="12" y="40" fill="#4169E1"/>
                         </g>
-                        <!-- Wallet -->
-                        <rect id="wallet" x="15" y="15" width="10" height="10" fill="#0f0"/>
                     </g>
                 </svg>
             </div>
@@ -180,7 +178,6 @@
         const svg = document.getElementById('game-svg');
         const buildingsGroup = document.getElementById('background-buildings');
         const character = document.getElementById('character');
-        const wallet = document.getElementById('wallet');
         const legs = document.getElementById('legs');
         const leg1 = document.getElementById('leg1');
         const leg2 = document.getElementById('leg2');
@@ -525,7 +522,6 @@
             document.getElementById('btc-amount').textContent = '1.0 BTC';
             document.getElementById('blocks').textContent = '0';
             document.getElementById('sunglasses').style.display = 'none';
-            wallet.setAttribute('fill', walletType === 'Bitkey' ? '#0f0' : '#f00');
             
             showScreen('game-screen');
             createBackgroundBuildings();
