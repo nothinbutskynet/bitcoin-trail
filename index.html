@@ -83,21 +83,17 @@
             50% { opacity: 0.8; }
         }
 
-        @keyframes glitchEffect {
-            0% { transform: translate(0); }
-            20% { transform: translate(-2px, 2px); }
-            40% { transform: translate(2px, -2px); }
-            60% { transform: translate(-1px, -1px); }
-            80% { transform: translate(1px, 1px); }
-            100% { transform: translate(0); }
+        @keyframes truthFlash {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
         }
 
         .neon-text {
             animation: neonFlicker 2s infinite;
         }
 
-        .glitch {
-            animation: glitchEffect 0.2s infinite;
+        .truth-flash {
+            animation: truthFlash 3s infinite;
         }
     </style>
 </head>
@@ -132,17 +128,8 @@
                     <!-- Background Buildings -->
                     <g id="background-buildings"></g>
                     
-                    <!-- Billboards -->
-                    <g id="billboards"></g>
-                    
                     <!-- Street & Sidewalk -->
                     <rect x="0" y="320" width="100%" height="80" fill="#555"/> <!-- Wide Sidewalk -->
-                    
-                    <!-- Sidewalk details -->
-                    <g id="sidewalk-details"></g>
-                    
-                    <!-- Crowd of people -->
-                    <g id="crowd"></g>
                     
                     <!-- Main Character -->
                     <g id="character" transform="translate(300, 290)">
@@ -179,10 +166,9 @@
     </div>
 
     <script>
+        // Get DOM elements
         const svg = document.getElementById('game-svg');
         const buildingsGroup = document.getElementById('background-buildings');
-        const billboardsGroup = document.getElementById('billboards');
-        const crowdGroup = document.getElementById('crowd');
         const character = document.getElementById('character');
         const wallet = document.getElementById('wallet');
         const legs = document.getElementById('legs');
@@ -196,6 +182,7 @@
             blocks: 0,
             moving: true,
             time: 0,
+            buildings: [],
             billboards: [],
             walkCycle: 0,
             characterX: 300,
@@ -203,7 +190,7 @@
             wearingSunglasses: false
         };
 
-        // Billboard content with "visible" and "truth" messages
+        // Billboard content
         const billboardContent = [
             {
                 visible: { text: "WELLS CRYPTO", color: "#0ff" },
@@ -218,72 +205,122 @@
                 truth: { text: "TOTAL SURVEILLANCE", color: "#f00" }
             },
             {
-                visible: { text: "WESTERN U OWN NOTHING", color: "#ff0" },
-                truth: { text: "SEND MONEY, PAY THE MOB", color: "#f00" }
+                visible: { text: "WESTERN UNION", color: "#ff0" },
+                truth: { text: "PAY THE MOB", color: "#f00" }
             }
         ];
 
-        // Create Times Square billboards
-        function createBillboards() {
-            billboardsGroup.innerHTML = '';
+        // Create background buildings with billboards
+        function createBackgroundBuildings() {
+            buildingsGroup.innerHTML = '';
+            gameState.buildings = [];
             gameState.billboards = [];
             
-            for (let i = 0; i < billboardContent.length; i++) {
-                const billboardGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
-                const content = billboardContent[i];
-                const xPos = -100 + (i * 500);
+            // Create buildings with different heights
+            for (let i = 0; i < 8; i++) {  // More buildings
+                const buildingGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                const height = 225 + Math.random() * 75; // Buildings between 225-300px tall (increased by 25%)
+                const width = 112; // Width increased by 25% (from 90)
+                const spacing = 38; // Spacing increased proportionally
+                const x = i * (width + spacing); // Position with spacing
                 
-                billboardGroup.setAttribute('transform', `translate(${xPos}, 50)`);
+                // Main building shape
+                const building = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                building.setAttribute('x', 0);  // Position relative to group
+                building.setAttribute('y', 320 - height);
+                building.setAttribute('width', width);
+                building.setAttribute('height', height);
+                building.setAttribute('fill', '#222');
+                building.setAttribute('stroke', '#333');
+                building.setAttribute('stroke-width', '1');
+                buildingGroup.appendChild(building);
 
-                // Billboard background
-                const board = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-                board.setAttribute('width', 350);
-                board.setAttribute('height', 160);
-                board.setAttribute('fill', '#000');
-                board.setAttribute('stroke', content.visible.color);
-                board.setAttribute('stroke-width', '4');
-                billboardGroup.appendChild(board);
+                // Add windows
+                const windowRows = Math.floor(height / 25); // Increased window spacing
+                const windowCols = 3;
+                for (let row = 0; row < windowRows; row++) {
+                    for (let col = 0; col < windowCols; col++) {
+                        const windowLight = Math.random() > 0.3 ? '#ffff99' : '#666';
+                        const windowEl = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                        windowEl.setAttribute('x', 19 + (col * 25));  // Increased spacing
+                        windowEl.setAttribute('y', (320 - height + 19) + (row * 25));  // Increased spacing
+                        windowEl.setAttribute('width', 15);  // Increased window size
+                        windowEl.setAttribute('height', 15);  // Increased window size
+                        windowEl.setAttribute('fill', windowLight);
+                        buildingGroup.appendChild(windowEl);
+                    }
+                }
 
-                // Add glow effect
-                const glow = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-                glow.setAttribute('width', 350);
-                glow.setAttribute('height', 160);
-                glow.setAttribute('fill', 'none');
-                glow.setAttribute('stroke', content.visible.color);
-                glow.setAttribute('stroke-width', '1');
-                glow.setAttribute('filter', 'url(#glow)');
-                billboardGroup.appendChild(glow);
+                // Add billboard if this is every 3rd building
+                if (i % 3 === 1 && billboardContent[Math.floor(i/3)]) {  // Use i/3 to cycle through billboard content
+                    const content = billboardContent[Math.floor(i/3)];
+                    const billboardWidth = width * 0.85;
+                    const billboardHeight = 31;  // Increased by 25% (from 25)
+                    const billboardX = (width - billboardWidth) / 2;  // Center on building
+                    const billboardY = 320 - height + 6;  // Slight adjustment for new height
 
-                // Visible text
-                const visibleText = document.createElementNS("http://www.w3.org/2000/svg", "text");
-                visibleText.setAttribute('x', '175');
-                visibleText.setAttribute('y', '65');  // Moved up slightly
-                visibleText.setAttribute('text-anchor', 'middle');
-                visibleText.setAttribute('fill', content.visible.color);
-                visibleText.setAttribute('font-size', '24');
-                visibleText.setAttribute('font-weight', 'bold');
-                visibleText.setAttribute('class', 'neon-text visible-text');
-                visibleText.textContent = content.visible.text;
-                billboardGroup.appendChild(visibleText);
+                    // Billboard background
+                    const board = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                    board.setAttribute('x', billboardX);
+                    board.setAttribute('y', billboardY);
+                    board.setAttribute('width', billboardWidth);
+                    board.setAttribute('height', billboardHeight);
+                    board.setAttribute('fill', '#000');
+                    board.setAttribute('stroke', content.visible.color);
+                    board.setAttribute('stroke-width', '0.5');
+                    buildingGroup.appendChild(board);
 
-                // Truth text
-                const truthText = document.createElementNS("http://www.w3.org/2000/svg", "text");
-                truthText.setAttribute('x', '175');
-                truthText.setAttribute('y', '95');  // Moved up more
-                truthText.setAttribute('text-anchor', 'middle');
-                truthText.setAttribute('fill', content.truth.color);
-                truthText.setAttribute('font-size', '24');  // Even smaller font size
-                truthText.setAttribute('font-weight', 'bold');
-                truthText.setAttribute('class', 'truth-text');
-                truthText.textContent = content.truth.text;
-                billboardGroup.appendChild(truthText);
+                    // Add glow effect
+                    const glow = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                    glow.setAttribute('x', billboardX);
+                    glow.setAttribute('y', billboardY);
+                    glow.setAttribute('width', billboardWidth);
+                    glow.setAttribute('height', billboardHeight);
+                    glow.setAttribute('fill', 'none');
+                    glow.setAttribute('stroke', content.visible.color);
+                    glow.setAttribute('stroke-width', '0.25');
+                    glow.setAttribute('filter', 'url(#glow)');
+                    buildingGroup.appendChild(glow);
 
-                billboardsGroup.appendChild(billboardGroup);
-                gameState.billboards.push({
-                    element: billboardGroup,
-                    x: xPos,
-                    visibleText: visibleText,
-                    truthText: truthText
+                    // Visible text
+                    const visibleText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                    visibleText.setAttribute('x', billboardX + (billboardWidth / 2));
+                    visibleText.setAttribute('y', billboardY + 12);  // Adjusted for new height
+                    visibleText.setAttribute('text-anchor', 'middle');
+                    visibleText.setAttribute('fill', content.visible.color);
+                    visibleText.setAttribute('font-size', '9');  // Increased by ~25%
+                    visibleText.setAttribute('font-weight', 'bold');
+                    visibleText.setAttribute('class', 'neon-text visible-text');
+                    visibleText.textContent = content.visible.text;
+                    buildingGroup.appendChild(visibleText);
+
+                    // Truth text
+                    const truthText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                    truthText.setAttribute('x', billboardX + (billboardWidth / 2));
+                    truthText.setAttribute('y', billboardY + 25);  // Adjusted for new height
+                    truthText.setAttribute('text-anchor', 'middle');
+                    truthText.setAttribute('fill', content.truth.color);
+                    truthText.setAttribute('font-size', '9');  // Increased by ~25%
+                    truthText.setAttribute('font-weight', 'bold');
+                    truthText.setAttribute('class', 'truth-text');
+                    truthText.textContent = content.truth.text;
+                    buildingGroup.appendChild(truthText);
+
+                    // Store references to the texts for sunglasses effect
+                    gameState.billboards.push({
+                        visibleText: visibleText,
+                        truthText: truthText,
+                        board: board
+                    });
+                }
+
+                buildingGroup.setAttribute('transform', `translate(${x}, 0)`);
+                buildingsGroup.appendChild(buildingGroup);
+                gameState.buildings.push({
+                    element: buildingGroup,
+                    x: x,
+                    width: width,
+                    height: height
                 });
             }
         }
@@ -291,37 +328,43 @@
         // Animation loop
         function animate() {
             if (gameState.moving) {
-                const minSpacing = 500;
-                const billboardWidth = 350;
-                const totalWidth = billboardContent.length * minSpacing;
+                const buildingWidth = 112;  // Match the new building width
+                const buildingSpacing = 38;  // Match the new spacing
+                const totalWidth = gameState.buildings.length * (buildingWidth + buildingSpacing);
                 
-                gameState.billboards.forEach((billboard) => {
-                    billboard.x -= 0.5;
-                    
-                    if (billboard.x < -billboardWidth) {
-                        billboard.x += totalWidth;
+                // Move buildings (billboards will move with them)
+                gameState.buildings.forEach((building) => {
+                    building.x -= 0.5;
+                    if (building.x < -buildingWidth) {
+                        building.x += totalWidth;
                     }
-                    
-                    billboard.element.setAttribute('transform', `translate(${billboard.x}, 50)`);
-                    
-                    if (gameState.wearingSunglasses) {
+                    building.element.setAttribute('transform', `translate(${building.x}, 0)`);
+                });
+                
+                // Update sunglasses effect
+                if (gameState.wearingSunglasses) {
+                    gameState.billboards.forEach(billboard => {
                         billboard.visibleText.style.opacity = '0';
                         billboard.truthText.style.opacity = '1';
-                        billboard.truthText.classList.add('glitch');
-                        billboard.element.querySelector('rect').setAttribute('stroke', '#f00');
-                    } else {
+                        billboard.truthText.classList.add('truth-flash');
+                        billboard.board.setAttribute('stroke', '#f00');
+                    });
+                } else {
+                    gameState.billboards.forEach(billboard => {
                         billboard.visibleText.style.opacity = '1';
                         billboard.truthText.style.opacity = '0';
-                        billboard.truthText.classList.remove('glitch');
-                        billboard.element.querySelector('rect').setAttribute('stroke', billboard.visibleText.getAttribute('fill'));
-                    }
-                });
+                        billboard.truthText.classList.remove('truth-flash');
+                        billboard.board.setAttribute('stroke', billboard.visibleText.getAttribute('fill'));
+                    });
+                }
 
+                // Animate character
                 gameState.walkCycle += 0.05;
                 const legOffset = Math.sin(gameState.walkCycle) * 5;
                 leg1.setAttribute('y', 40 + legOffset);
                 leg2.setAttribute('y', 40 - legOffset);
 
+                // Update game stats
                 gameState.time += 1/60;
                 if (gameState.time >= 1) {
                     gameState.blocks++;
@@ -345,7 +388,7 @@
             document.getElementById('wallet-type').textContent = walletType;
             wallet.setAttribute('fill', walletType === 'Bitkey' ? '#0f0' : '#f00');
             showScreen('game-screen');
-            createBillboards();
+            createBackgroundBuildings();
             animate();
             
             const textWindow = document.getElementById('text-window');
