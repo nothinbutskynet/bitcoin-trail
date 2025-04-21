@@ -83,17 +83,8 @@
             50% { opacity: 0.8; }
         }
 
-        @keyframes truthFlash {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
-        }
-
         .neon-text {
             animation: neonFlicker 2s infinite;
-        }
-
-        .truth-flash {
-            animation: truthFlash 3s infinite;
         }
     </style>
 </head>
@@ -184,11 +175,113 @@
             time: 0,
             buildings: [],
             billboards: [],
+            pedestrians: [],
             walkCycle: 0,
             characterX: 300,
             characterSpeed: 0.5,
             wearingSunglasses: false
         };
+
+        // Pedestrian class
+        class Pedestrian {
+            constructor(direction) {
+                this.x = direction === 'right' ? -20 : 820;
+                this.y = 290 + Math.random() * 30;  // More vertical variation
+                this.speed = (0.2 + Math.random() * 0.4) * (direction === 'right' ? 1 : -1);  // Slower movement
+                this.walkCycle = Math.random() * Math.PI;
+                this.bobOffset = Math.random() * Math.PI;  // For up/down bobbing motion
+                this.element = this.createElement();
+                this.direction = direction;
+            }
+
+            createElement() {
+                const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                group.classList.add('pedestrian');  // Add class for cleanup
+                
+                // Body
+                const body = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                body.setAttribute('width', '15');
+                body.setAttribute('height', '25');
+                body.setAttribute('x', '0');
+                body.setAttribute('y', '8');
+                body.setAttribute('fill', this.getRandomColor());
+                group.appendChild(body);
+
+                // Head
+                const head = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                head.setAttribute('cx', '7.5');
+                head.setAttribute('cy', '5');
+                head.setAttribute('r', '5');
+                head.setAttribute('fill', '#ffd1b3');  // Skin tone
+                group.appendChild(head);
+
+                // Legs
+                this.leg1 = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                this.leg1.setAttribute('width', '4');
+                this.leg1.setAttribute('height', '15');
+                this.leg1.setAttribute('x', '3');
+                this.leg1.setAttribute('y', '33');
+                this.leg1.setAttribute('fill', '#000');
+                group.appendChild(this.leg1);
+
+                this.leg2 = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                this.leg2.setAttribute('width', '4');
+                this.leg2.setAttribute('height', '15');
+                this.leg2.setAttribute('x', '8');
+                this.leg2.setAttribute('y', '33');
+                this.leg2.setAttribute('fill', '#000');
+                group.appendChild(this.leg2);
+
+                return group;
+            }
+
+            getRandomColor() {
+                const colors = ['#2196F3', '#4CAF50', '#FF9800', '#9C27B0', '#F44336', '#009688'];
+                return colors[Math.floor(Math.random() * colors.length)];
+            }
+
+            update() {
+                this.x += this.speed;
+                this.walkCycle += Math.abs(this.speed) * 0.1;
+                this.bobOffset += 0.05;
+                
+                // Update leg positions for walking animation
+                const legOffset = Math.sin(this.walkCycle) * 3;
+                this.leg1.setAttribute('y', 33 + legOffset);
+                this.leg2.setAttribute('y', 33 - legOffset);
+                
+                // Add slight up/down bobbing motion
+                const bobY = Math.sin(this.bobOffset) * 2;
+                
+                // Update whole figure position with bobbing and direction
+                if (this.direction === 'left') {
+                    this.element.setAttribute('transform', `translate(${this.x}, ${this.y + bobY}) scale(-1, 1)`);
+                } else {
+                    this.element.setAttribute('transform', `translate(${this.x}, ${this.y + bobY})`);
+                }
+                
+                return this.x > -30 && this.x < 830;
+            }
+        }
+
+        function updatePedestrians() {
+            // Add new pedestrians randomly
+            if (Math.random() < 0.03) {  // 3% chance each frame
+                const direction = Math.random() < 0.5 ? 'right' : 'left';
+                const pedestrian = new Pedestrian(direction);
+                gameState.pedestrians.push(pedestrian);
+                svg.appendChild(pedestrian.element);
+            }
+
+            // Update existing pedestrians
+            gameState.pedestrians = gameState.pedestrians.filter(ped => {
+                const keepPedestrian = ped.update();
+                if (!keepPedestrian) {
+                    svg.removeChild(ped.element);
+                }
+                return keepPedestrian;
+            });
+        }
 
         // Billboard content
         const billboardContent = [
@@ -346,14 +439,12 @@
                     gameState.billboards.forEach(billboard => {
                         billboard.visibleText.style.opacity = '0';
                         billboard.truthText.style.opacity = '1';
-                        billboard.truthText.classList.add('truth-flash');
                         billboard.board.setAttribute('stroke', '#f00');
                     });
                 } else {
                     gameState.billboards.forEach(billboard => {
                         billboard.visibleText.style.opacity = '1';
                         billboard.truthText.style.opacity = '0';
-                        billboard.truthText.classList.remove('truth-flash');
                         billboard.board.setAttribute('stroke', billboard.visibleText.getAttribute('fill'));
                     });
                 }
@@ -363,6 +454,9 @@
                 const legOffset = Math.sin(gameState.walkCycle) * 5;
                 leg1.setAttribute('y', 40 + legOffset);
                 leg2.setAttribute('y', 40 - legOffset);
+
+                // Update pedestrians
+                updatePedestrians();
 
                 // Update game stats
                 gameState.time += 1/60;
@@ -384,9 +478,36 @@
         }
 
         function startGame(walletType) {
-            gameState.wallet = walletType;
+            // Reset game state
+            gameState = {
+                wallet: walletType,
+                btc: 1.0,
+                blocks: 0,
+                moving: true,
+                time: 0,
+                buildings: [],
+                billboards: [],
+                pedestrians: [],
+                walkCycle: 0,
+                characterX: 300,
+                characterSpeed: 0.5,
+                wearingSunglasses: false
+            };
+
+            // Clear any existing pedestrians
+            const existingPeds = svg.querySelectorAll('.pedestrian');
+            existingPeds.forEach(ped => svg.removeChild(ped));
+            
+            // Clear any existing buildings
+            buildingsGroup.innerHTML = '';
+            
+            // Reset UI
             document.getElementById('wallet-type').textContent = walletType;
+            document.getElementById('btc-amount').textContent = '1.0 BTC';
+            document.getElementById('blocks').textContent = '0';
+            document.getElementById('sunglasses').style.display = 'none';
             wallet.setAttribute('fill', walletType === 'Bitkey' ? '#0f0' : '#f00');
+            
             showScreen('game-screen');
             createBackgroundBuildings();
             animate();
@@ -423,11 +544,12 @@
             const noButton = document.createElement('button');
             noButton.textContent = 'Leave them alone';
             noButton.onclick = () => {
-                gameState.wearingSunglasses = false;
-                document.getElementById('sunglasses').style.display = 'none';
+                gameState.wearingSunglasses = true;  // Force glasses on
+                document.getElementById('sunglasses').style.display = 'block';  // Show glasses
                 textWindow.innerHTML += `
-                    <p>You decide to leave the sunglasses where they are. Times Square continues to shine 
-                    with its usual glamorous advertisements...</p>
+                    <p style="color: #f00;">"IT PUTS THE GLASSES ON THE FACE..."</p>
+                    <p>An unseen force compels you to put on the sunglasses. The bright advertisements 
+                    of Times Square suddenly reveal their true nature...</p>
                 `;
                 choices.innerHTML = '';
                 const continueButton = document.createElement('button');
