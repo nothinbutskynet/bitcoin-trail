@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>The Bitcoin Trail - Times Square Edition</title>
+    <style>
+        body {
+            background-color: #000;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            padding: 0;
+        }
+
+        #game-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        #game-window {
+            border: 2px solid #fff;
+            height: 400px;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+            background-color: #1a1a1a;
+        }
+
+        #stats-bar {
+            border: 2px solid #fff;
+            padding: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            background-color: #000;
+        }
+
+        #text-window {
+            border: 2px solid #fff;
+            padding: 10px;
+            margin-bottom: 20px;
+            min-height: 100px;
+            background-color: #000;
+        }
+
+        button {
+            background-color: #000;
+            color: #fff;
+            border: 2px solid #fff;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            width: 200px;
+        }
+
+        button:hover {
+            background-color: #fff;
+            color: #000;
+        }
+
+        .visible-text {
+            opacity: 1;
+            transition: opacity 0.5s;
+        }
+
+        .truth-text {
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        @keyframes neonFlicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        @keyframes glitchEffect {
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(2px, -2px); }
+            60% { transform: translate(-1px, -1px); }
+            80% { transform: translate(1px, 1px); }
+            100% { transform: translate(0); }
+        }
+
+        .neon-text {
+            animation: neonFlicker 2s infinite;
+        }
+
+        .glitch {
+            animation: glitchEffect 0.2s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="title-screen" class="screen active">
+            <h1 style="text-align: center;">The Bitcoin Trail</h1>
+            <h2 style="text-align: center;">Times Square Edition</h2>
+            <div style="text-align: center;">
+                <p>Choose your hardware wallet:</p>
+                <button onclick="startGame('Bitkey')">Bitkey</button><br>
+                <button onclick="startGame('Trezor')">Trezor</button><br>
+                <button onclick="startGame('Ledger')">Ledger</button><br>
+                <button onclick="startGame('Foundation')">Foundation</button>
+            </div>
+        </div>
+
+        <div id="game-screen" class="screen">
+            <div id="game-window">
+                <svg id="game-svg" width="100%" height="100%" style="background: linear-gradient(#1a1a3a, #4a4a6a);">
+                    <!-- Filters -->
+                    <defs>
+                        <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                            <feGaussianBlur stdDeviation="5" result="coloredBlur"/>
+                            <feMerge>
+                                <feMergeNode in="coloredBlur"/>
+                                <feMergeNode in="SourceGraphic"/>
+                            </feMerge>
+                        </filter>
+                    </defs>
+                    
+                    <!-- Background Buildings -->
+                    <g id="background-buildings"></g>
+                    
+                    <!-- Billboards -->
+                    <g id="billboards"></g>
+                    
+                    <!-- Street & Sidewalk -->
+                    <rect x="0" y="320" width="100%" height="80" fill="#555"/> <!-- Wide Sidewalk -->
+                    
+                    <!-- Sidewalk details -->
+                    <g id="sidewalk-details"></g>
+                    
+                    <!-- Crowd of people -->
+                    <g id="crowd"></g>
+                    
+                    <!-- Main Character -->
+                    <g id="character" transform="translate(300, 290)">
+                        <!-- Body -->
+                        <rect width="20" height="40" fill="#fff"/>
+                        <!-- Head -->
+                        <circle cx="10" cy="0" r="8" fill="#fff"/>
+                        <!-- Sunglasses (initially hidden) -->
+                        <g id="sunglasses" style="display: none;">
+                            <rect x="4" y="-2" width="12" height="4" fill="#000"/>
+                            <rect x="2" y="-2" width="4" height="2" fill="#000"/>
+                            <rect x="14" y="-2" width="4" height="2" fill="#000"/>
+                        </g>
+                        <!-- Legs -->
+                        <g id="legs">
+                            <rect id="leg1" width="6" height="20" x="4" y="40" fill="#fff"/>
+                            <rect id="leg2" width="6" height="20" x="12" y="40" fill="#fff"/>
+                        </g>
+                        <!-- Wallet -->
+                        <rect id="wallet" x="15" y="15" width="10" height="10" fill="#0f0"/>
+                    </g>
+                </svg>
+            </div>
+            
+            <div id="stats-bar">
+                <span>Wallet: <span id="wallet-type"></span></span>
+                <span>Bitcoin: <span id="btc-amount">1.0 BTC</span></span>
+                <span>Blocks: <span id="blocks">0</span></span>
+            </div>
+            
+            <div id="text-window"></div>
+            <div id="choices"></div>
+        </div>
+    </div>
+
+    <script>
+        const svg = document.getElementById('game-svg');
+        const buildingsGroup = document.getElementById('background-buildings');
+        const billboardsGroup = document.getElementById('billboards');
+        const crowdGroup = document.getElementById('crowd');
+        const character = document.getElementById('character');
+        const wallet = document.getElementById('wallet');
+        const legs = document.getElementById('legs');
+        const leg1 = document.getElementById('leg1');
+        const leg2 = document.getElementById('leg2');
+
+        // Game state
+        let gameState = {
+            wallet: null,
+            btc: 1.0,
+            blocks: 0,
+            moving: true,
+            time: 0,
+            billboards: [],
+            walkCycle: 0,
+            characterX: 300,
+            characterSpeed: 0.5,
+            wearingSunglasses: false
+        };
+
+        // Billboard content with "visible" and "truth" messages
+        const billboardContent = [
+            {
+                visible: { text: "WELLS CRYPTO", color: "#0ff" },
+                truth: { text: "OBEY THE KING", color: "#f00" }
+            },
+            {
+                visible: { text: "CRYPTO EXCHANGE", color: "#ff0" },
+                truth: { text: "NOT YOUR KEYS", color: "#f00" }
+            },
+            {
+                visible: { text: "DIGITAL DOLLAR", color: "#0f0" },
+                truth: { text: "TOTAL SURVEILLANCE", color: "#f00" }
+            },
+            {
+                visible: { text: "WESTERN U OWN NOTHING", color: "#ff0" },
+                truth: { text: "SEND MONEY, PAY THE MOB", color: "#f00" }
+            }
+        ];
+
+        // Create Times Square billboards
+        function createBillboards() {
+            billboardsGroup.innerHTML = '';
+            gameState.billboards = [];
+            
+            for (let i = 0; i < billboardContent.length; i++) {
+                const billboardGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                const content = billboardContent[i];
+                const xPos = -100 + (i * 500);
+                
+                billboardGroup.setAttribute('transform', `translate(${xPos}, 50)`);
+
+                // Billboard background
+                const board = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                board.setAttribute('width', 350);
+                board.setAttribute('height', 160);
+                board.setAttribute('fill', '#000');
+                board.setAttribute('stroke', content.visible.color);
+                board.setAttribute('stroke-width', '4');
+                billboardGroup.appendChild(board);
+
+                // Add glow effect
+                const glow = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                glow.setAttribute('width', 350);
+                glow.setAttribute('height', 160);
+                glow.setAttribute('fill', 'none');
+                glow.setAttribute('stroke', content.visible.color);
+                glow.setAttribute('stroke-width', '1');
+                glow.setAttribute('filter', 'url(#glow)');
+                billboardGroup.appendChild(glow);
+
+                // Visible text
+                const visibleText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                visibleText.setAttribute('x', '175');
+                visibleText.setAttribute('y', '65');  // Moved up slightly
+                visibleText.setAttribute('text-anchor', 'middle');
+                visibleText.setAttribute('fill', content.visible.color);
+                visibleText.setAttribute('font-size', '24');
+                visibleText.setAttribute('font-weight', 'bold');
+                visibleText.setAttribute('class', 'neon-text visible-text');
+                visibleText.textContent = content.visible.text;
+                billboardGroup.appendChild(visibleText);
+
+                // Truth text
+                const truthText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                truthText.setAttribute('x', '175');
+                truthText.setAttribute('y', '95');  // Moved up more
+                truthText.setAttribute('text-anchor', 'middle');
+                truthText.setAttribute('fill', content.truth.color);
+                truthText.setAttribute('font-size', '24');  // Even smaller font size
+                truthText.setAttribute('font-weight', 'bold');
+                truthText.setAttribute('class', 'truth-text');
+                truthText.textContent = content.truth.text;
+                billboardGroup.appendChild(truthText);
+
+                billboardsGroup.appendChild(billboardGroup);
+                gameState.billboards.push({
+                    element: billboardGroup,
+                    x: xPos,
+                    visibleText: visibleText,
+                    truthText: truthText
+                });
+            }
+        }
+
+        // Animation loop
+        function animate() {
+            if (gameState.moving) {
+                const minSpacing = 500;
+                const billboardWidth = 350;
+                const totalWidth = billboardContent.length * minSpacing;
+                
+                gameState.billboards.forEach((billboard) => {
+                    billboard.x -= 0.5;
+                    
+                    if (billboard.x < -billboardWidth) {
+                        billboard.x += totalWidth;
+                    }
+                    
+                    billboard.element.setAttribute('transform', `translate(${billboard.x}, 50)`);
+                    
+                    if (gameState.wearingSunglasses) {
+                        billboard.visibleText.style.opacity = '0';
+                        billboard.truthText.style.opacity = '1';
+                        billboard.truthText.classList.add('glitch');
+                        billboard.element.querySelector('rect').setAttribute('stroke', '#f00');
+                    } else {
+                        billboard.visibleText.style.opacity = '1';
+                        billboard.truthText.style.opacity = '0';
+                        billboard.truthText.classList.remove('glitch');
+                        billboard.element.querySelector('rect').setAttribute('stroke', billboard.visibleText.getAttribute('fill'));
+                    }
+                });
+
+                gameState.walkCycle += 0.05;
+                const legOffset = Math.sin(gameState.walkCycle) * 5;
+                leg1.setAttribute('y', 40 + legOffset);
+                leg2.setAttribute('y', 40 - legOffset);
+
+                gameState.time += 1/60;
+                if (gameState.time >= 1) {
+                    gameState.blocks++;
+                    document.getElementById('blocks').textContent = gameState.blocks;
+                    gameState.time = 0;
+                }
+            }
+            
+            requestAnimationFrame(animate);
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        function startGame(walletType) {
+            gameState.wallet = walletType;
+            document.getElementById('wallet-type').textContent = walletType;
+            wallet.setAttribute('fill', walletType === 'Bitkey' ? '#0f0' : '#f00');
+            showScreen('game-screen');
+            createBillboards();
+            animate();
+            
+            const textWindow = document.getElementById('text-window');
+            const choices = document.getElementById('choices');
+            
+            textWindow.innerHTML = `
+                <h3>Strange Discovery</h3>
+                <p>As you begin your journey through Times Square, you notice something glinting in the crowd. 
+                   A pair of mysterious sunglasses lies on the ground, seemingly untouched by the rushing feet around it.</p>
+            `;
+            
+            choices.innerHTML = '';
+            const yesButton = document.createElement('button');
+            yesButton.textContent = 'Put on the sunglasses';
+            yesButton.onclick = () => {
+                gameState.wearingSunglasses = true;
+                document.getElementById('sunglasses').style.display = 'block';
+                textWindow.innerHTML += `
+                    <p>You put on the sunglasses. Suddenly, the bright advertisements of Times Square 
+                    take on a different meaning. You can see through the illusion...</p>
+                `;
+                choices.innerHTML = '';
+                const continueButton = document.createElement('button');
+                continueButton.textContent = 'Continue Journey';
+                continueButton.onclick = () => {
+                    gameState.moving = true;
+                    setTimeout(generateEvent, 5000);
+                };
+                choices.appendChild(continueButton);
+            };
+            
+            const noButton = document.createElement('button');
+            noButton.textContent = 'Leave them alone';
+            noButton.onclick = () => {
+                gameState.wearingSunglasses = false;
+                document.getElementById('sunglasses').style.display = 'none';
+                textWindow.innerHTML += `
+                    <p>You decide to leave the sunglasses where they are. Times Square continues to shine 
+                    with its usual glamorous advertisements...</p>
+                `;
+                choices.innerHTML = '';
+                const continueButton = document.createElement('button');
+                continueButton.textContent = 'Continue Journey';
+                continueButton.onclick = () => {
+                    gameState.moving = true;
+                    setTimeout(generateEvent, 5000);
+                };
+                choices.appendChild(continueButton);
+            };
+            
+            choices.appendChild(yesButton);
+            choices.appendChild(noButton);
+            gameState.moving = false;
+        }
+
+        function generateEvent() {
+            gameState.moving = false;
+            const event = events[Math.floor(Math.random() * events.length)];
+            const textWindow = document.getElementById('text-window');
+            const choices = document.getElementById('choices');
+            
+            textWindow.innerHTML = `<h3>${event.title}</h3><p>${event.description}</p>`;
+            choices.innerHTML = '';
+
+            const options = gameState.wallet === 'Bitkey' ? event.bitkeyOptions : event.otherOptions;
+            
+            options.forEach(option => {
+                const button = document.createElement('button');
+                button.textContent = option.text;
+                button.onclick = () => handleChoice(option.outcome);
+                choices.appendChild(button);
+            });
+        }
+
+        function handleChoice(outcome) {
+            const textWindow = document.getElementById('text-window');
+            const choices = document.getElementById('choices');
+            
+            textWindow.innerHTML += `<p>${outcome}</p>`;
+            choices.innerHTML = '';
+
+            const continueButton = document.createElement('button');
+            continueButton.textContent = 'Continue Journey';
+            continueButton.onclick = () => {
+                gameState.moving = true;
+                setTimeout(generateEvent, 5000 + Math.random() * 5000);
+            };
+            choices.appendChild(continueButton);
+        }
+
+        const events = [
+            {
+                title: "Times Square Chaos!",
+                description: "You dropped your wallet in the crowded Times Square!",
+                bitkeyOptions: [
+                    {
+                        text: "Use Self-Custody Recovery",
+                        outcome: "You quickly recover access to your bitcoin right there in Times Square."
+                    },
+                    {
+                        text: "Use Social Recovery",
+                        outcome: "Your trusted contacts help you recover access while you enjoy the city lights."
+                    }
+                ],
+                otherOptions: [
+                    {
+                        text: "Check seed phrase backup",
+                        outcome: "You rush home through the crowds to check your seed phrase..."
+                    }
+                ]
+            },
+            {
+                title: "Tourist Collision!",
+                description: "A tourist taking photos bumped into you and your wallet fell!",
+                bitkeyOptions: [
+                    {
+                        text: "Use Self-Custody Recovery",
+                        outcome: "No problem! You recover your bitcoin using your phone while helping the tourist with directions."
+                    },
+                    {
+                        text: "Use Social Recovery",
+                        outcome: "Your trusted contacts help you recover access while you share NYC tips with the tourist."
+                    }
+                ],
+                otherOptions: [
+                    {
+                        text: "Search for seed phrase",
+                        outcome: "You leave the tourist confused as you rush home to check your backup..."
+                    }
+                ]
+            }
+        ];
+    </script>
+</body>
+</html>
