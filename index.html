@@ -135,28 +135,81 @@
                     
                     <!-- Main Character -->
                     <g id="character" transform="translate(300, 290)">
-                        <!-- Body (Brown Shirt) -->
-                        <rect width="20" height="40" fill="#8B4513"/>
-                        <!-- Yellow 'Satoshi' Text -->
-                        <text x="10" y="15" text-anchor="middle" fill="#FFD700" 
-                              font-family="Arial" font-size="4" font-weight="bold">SATOSHI</text>
-                        <!-- Smiley Face -->
-                        <circle cx="10" cy="25" r="5" fill="#FFD700"/>
-                        <circle cx="7" cy="23" r="1" fill="#000"/>
-                        <circle cx="13" cy="23" r="1" fill="#000"/>
-                        <path d="M7 26 Q10 28 13 26" stroke="#000" stroke-width="1" fill="none"/>
                         <!-- Head -->
                         <circle cx="10" cy="0" r="8" fill="#ffd1b3"/>
+                        
+                        <!-- Hair showing from under cap -->
+                        <path d="M2 -5 L0 -5 Q0 2 2 4" fill="#4a4a4a" stroke="none"/> <!-- Left side hair -->
+                        <path d="M18 -5 L20 -5 Q20 2 18 4" fill="#4a4a4a" stroke="none"/> <!-- Right side hair -->
+                        <path d="M1 -4 Q2 2 3 4" fill="#666666" stroke="none"/> <!-- Left detail -->
+                        <path d="M19 -4 Q18 2 17 4" fill="#666666" stroke="none"/> <!-- Right detail -->
+                        <path d="M2 -3 Q3 2 4 3" fill="#808080" stroke="none"/> <!-- Left gray streak -->
+                        <path d="M18 -3 Q17 2 16 3" fill="#808080" stroke="none"/> <!-- Right gray streak -->
+                        
+                        <!-- Baseball Cap -->
+                        <path d="M2 -8 Q10 -10 18 -8 L16 -5 Q10 -7 4 -5 Z" fill="#e6d5ac"/> <!-- Cap top -->
+                        <path d="M2 -8 Q10 -6 18 -8 L18 -6 Q10 -4 2 -6 Z" fill="#d4c39c"/> <!-- Cap band -->
+                        <path d="M2 -7 Q3 -5 6 -5" stroke="#c4b38c" fill="none" stroke-width="0.5"/> <!-- Cap seam -->
+                        <path d="M4 -6 C2 -6 1 -7 2 -8" fill="#d4c39c"/> <!-- Left side -->
+                        <path d="M16 -6 C18 -6 19 -7 18 -8" fill="#d4c39c"/> <!-- Right side -->
+                        <path d="M4 -5 Q10 -6 16 -5 L15 -4 Q10 -5 5 -4 Z" fill="#c4b38c"/> <!-- Brim -->
+
+                        <!-- Face -->
+                        <circle cx="7" cy="-1" r="1.2" fill="#2c5aa0"/> <!-- Left eye -->
+                        <circle cx="13" cy="-1" r="1.2" fill="#2c5aa0"/> <!-- Right eye -->
+                        <path d="M9 1 Q10 2 11 1" stroke="#8b4513" stroke-width="0.5" fill="none"/> <!-- Nose -->
+                        <path d="M7 2 Q10 3 13 2" stroke="#963c2d" stroke-width="0.5" fill="none"/> <!-- Mouth - slight smile -->
+                        
+                        <!-- T-shirt -->
+                        <rect width="20" height="32" y="8" fill="#8B4513"/>
+                        
+                        <!-- Beard - moved after t-shirt to render on top -->
+                        <path d="M2 4 Q10 20 18 4" fill="#4a4a4a" stroke="none"/> <!-- Full beard - extends over shirt -->
+                        <path d="M4 2 Q10 18 16 2" fill="#808080" stroke="none"/> <!-- Upper beard - longer -->
+                        <path d="M3 3 Q10 19 17 3" fill="#666666" stroke="none"/> <!-- Middle layer - longer -->
+                        <!-- Additional beard layers for fullness -->
+                        <path d="M3 5 Q10 17 17 5" fill="#595959" stroke="none"/> <!-- Extra layer -->
+                        <path d="M4 6 Q10 16 16 6" fill="#707070" stroke="none"/> <!-- Extra layer -->
+                        
                         <!-- Sunglasses (initially hidden) -->
                         <g id="sunglasses" style="display: none;">
                             <rect x="4" y="-2" width="12" height="4" fill="#000"/>
                             <rect x="2" y="-2" width="4" height="2" fill="#000"/>
                             <rect x="14" y="-2" width="4" height="2" fill="#000"/>
                         </g>
-                        <!-- Legs -->
+
+                        <!-- Satoshi Text -->
+                        <text x="10" y="17" text-anchor="middle" fill="#FFD700" 
+                              font-family="Arial" font-size="4" font-weight="bold">SATOSHI</text>
+                        
+                        <!-- Smiley Face -->
+                        <circle cx="10" cy="25" r="5" fill="#FFD700"/> <!-- Yellow background -->
+                        <circle cx="7" cy="23" r="1" fill="#000"/> <!-- Left eye -->
+                        <circle cx="13" cy="23" r="1" fill="#000"/> <!-- Right eye -->
+                        <path d="M7 26 Q10 28 13 26" stroke="#000" stroke-width="1" fill="none"/> <!-- Smile -->
+                        
+                        <!-- Arms -->
+                        <g id="arms">
+                            <!-- Left Arm -->
+                            <rect id="arm1" width="4" height="6" x="-2" y="12" fill="#8B4513"/> <!-- T-shirt sleeve -->
+                            <rect id="arm1_skin" width="4" height="14" x="-2" y="18" fill="#ffd1b3"/> <!-- Exposed arm -->
+                            <!-- Left Hand -->
+                            <circle cx="0" cy="34" r="3" fill="#ffd1b3"/> <!-- Left hand -->
+                            
+                            <!-- Right Arm -->
+                            <rect id="arm2" width="4" height="6" x="18" y="12" fill="#8B4513"/> <!-- T-shirt sleeve -->
+                            <rect id="arm2_skin" width="4" height="14" x="18" y="18" fill="#ffd1b3"/> <!-- Exposed arm -->
+                            <!-- Right Hand -->
+                            <circle cx="20" cy="34" r="3" fill="#ffd1b3"/> <!-- Right hand -->
+                        </g>
+                        
+                        <!-- Blue Jeans -->
                         <g id="legs">
-                            <rect id="leg1" width="6" height="20" x="4" y="40" fill="#4169E1"/>
-                            <rect id="leg2" width="6" height="20" x="12" y="40" fill="#4169E1"/>
+                            <rect id="leg1" width="6" height="25" x="4" y="40" fill="#4169E1"/>
+                            <rect id="leg2" width="6" height="25" x="12" y="40" fill="#4169E1"/>
+                            <!-- Shoes -->
+                            <rect x="3" y="65" width="8" height="4" fill="#000000" rx="1"/> <!-- Left shoe -->
+                            <rect x="11" y="65" width="8" height="4" fill="#000000" rx="1"/> <!-- Right shoe -->
                         </g>
                     </g>
                 </svg>
@@ -181,6 +234,11 @@
         const legs = document.getElementById('legs');
         const leg1 = document.getElementById('leg1');
         const leg2 = document.getElementById('leg2');
+        const arms = document.getElementById('arms');
+        const arm1 = document.getElementById('arm1');
+        const arm2 = document.getElementById('arm2');
+        const arm1_skin = document.getElementById('arm1_skin');
+        const arm2_skin = document.getElementById('arm2_skin');
 
         // Game state
         let gameState = {
@@ -468,8 +526,24 @@
                 // Animate character
                 gameState.walkCycle += 0.05;
                 const legOffset = Math.sin(gameState.walkCycle) * 5;
+                const armOffset = Math.sin(gameState.walkCycle) * 3;
                 leg1.setAttribute('y', 40 + legOffset);
                 leg2.setAttribute('y', 40 - legOffset);
+                arm1.setAttribute('y', 12 + armOffset);
+                arm1_skin.setAttribute('y', 18 + armOffset);
+                arm2.setAttribute('y', 12 - armOffset);
+                arm2_skin.setAttribute('y', 18 - armOffset);
+                
+                // Update hand positions with arms
+                const leftHand = document.querySelector('#arms circle:first-of-type');
+                const rightHand = document.querySelector('#arms circle:last-of-type');
+                leftHand.setAttribute('cy', 34 + armOffset);
+                rightHand.setAttribute('cy', 34 - armOffset);
+                
+                // Update shoe positions with legs
+                const shoes = document.querySelectorAll('#legs rect[fill="#000000"]');
+                shoes[0].setAttribute('y', 65 + legOffset);
+                shoes[1].setAttribute('y', 65 - legOffset);
 
                 // Update pedestrians
                 updatePedestrians();
